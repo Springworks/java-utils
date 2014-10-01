@@ -17,6 +17,9 @@ public class JacksonParser implements IJsonParser {
 	public JacksonParser() {
 		mapper = new ObjectMapper();
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		mapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
+		mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+		mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 	}
 
 	@Override
