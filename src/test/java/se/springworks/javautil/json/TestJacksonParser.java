@@ -17,96 +17,96 @@ import static junit.framework.Assert.assertTrue;
 
 public class TestJacksonParser {
 
-	public static class SimpleClass {
-		@JsonProperty
-		public String someString = "ABCDEF";
+  private static final String[] STRINGS = {"one", "two", "three", "four"};
+  private static final List<String> LISTOFSTRINGS = Arrays.asList(STRINGS);
+  private JacksonParser parser = new JacksonParser();
+  private SimpleClass simpleClass = new SimpleClass();
 
-		@JsonProperty
-		public int someInt = 12345;
+  private void assertSimpleClass(SimpleClass expected, SimpleClass actual) {
+    assertEquals(expected.someString, actual.someString);
+    assertEquals(expected.someInt, actual.someInt);
+    assertEquals(expected.someFloat, actual.someFloat);
+    assertEquals(expected.nullObject, actual.nullObject);
+  }
 
-		@JsonProperty
-		public float someFloat = 1.0002f;
+  private void assertLists(List<?> expected, List<?> actual) {
+    assertEquals(expected.size(), actual.size());
+    for (int i = 0; i < expected.size(); i++) {
+      assertEquals(expected.get(i), actual.get(i));
+      assertEquals(expected.get(i).getClass(), actual.get(i).getClass());
+    }
+  }
 
-		@JsonProperty
-		public String nullObject = null;
+  @Test
+  public void testToFromObject() {
+    String json = parser.toJson(simpleClass);
+    json = json.replaceAll("(\\r|\\n)", "");
+    json = json.replaceAll("\\s", "");
+    assertTrue(json.contains("\"ABCDEF\""));
+    assertTrue(json.contains("12345"));
+    assertTrue(json.contains("1.0002"));
+    assertTrue(json.contains("null"));
+    assertTrue(json.contains("\"someString\":"));
+    assertTrue(json.contains("\"someInt\":"));
+    assertTrue(json.contains("\"someFloat\":"));
+    assertTrue(json.contains("\"nullObject\":"));
 
-		public SimpleClass() {
+    SimpleClass simpleClassFromJson = parser.fromJson(json, SimpleClass.class);
+    assertSimpleClass(simpleClass, simpleClassFromJson);
+  }
 
-		}
-	}
+  @Test
+  public void testToFromCollection() {
+    String json = parser.toJson(LISTOFSTRINGS);
+    json = json.replaceAll("(\\r|\\n)", "");
+    json = json.replaceAll("\\s", "");
+    assertTrue(json.contains("one"));
+    assertTrue(json.contains("two"));
+    assertTrue(json.contains("three"));
+    assertTrue(json.contains("four"));
 
-	private static final String[] STRINGS = {"one", "two", "three", "four"};
-	private static final List<String> LISTOFSTRINGS = Arrays.asList(STRINGS);
+    ArrayList<String> listFromJson = parser.fromJson(json, new JavaTypeToken<ArrayList<String>>() {
+    });
+    assertLists(LISTOFSTRINGS, listFromJson);
+  }
 
-	private JacksonParser parser = new JacksonParser();
-	private SimpleClass simpleClass = new SimpleClass();
+  @Test
+  public void testToFromFile() throws IOException {
+    File tempFile = File.createTempFile("testToFromFile_", null);
+    parser.toJson(tempFile, simpleClass);
+    SimpleClass simpleClassFromJson = parser.fromJson(new FileInputStream(tempFile),
+                                                      SimpleClass.class);
+    assertSimpleClass(simpleClass, simpleClassFromJson);
 
+    tempFile = File.createTempFile("testToFromFile_", null);
+    parser.toJson(tempFile, LISTOFSTRINGS);
+    ArrayList<String> listFromJson = parser.fromJson(new FileInputStream(tempFile),
+                                                     new JavaTypeToken<ArrayList<String>>() {
+                                                     });
+    assertLists(LISTOFSTRINGS, listFromJson);
 
-	private void assertSimpleClass(SimpleClass expected, SimpleClass actual) {
-		assertEquals(expected.someString, actual.someString);
-		assertEquals(expected.someInt, actual.someInt);
-		assertEquals(expected.someFloat, actual.someFloat);
-		assertEquals(expected.nullObject, actual.nullObject);
-	}
+    tempFile = File.createTempFile("testToFromFile_", null);
+    parser.toJson(new FileOutputStream(tempFile), simpleClass);
+    simpleClassFromJson = parser.fromJson(new FileInputStream(tempFile), SimpleClass.class);
+    assertSimpleClass(simpleClass, simpleClassFromJson);
+  }
 
-	private void assertLists(List<?> expected, List<?> actual) {
-		assertEquals(expected.size(), actual.size());
-		for (int i = 0; i < expected.size(); i++) {
-			assertEquals(expected.get(i), actual.get(i));
-			assertEquals(expected.get(i).getClass(), actual.get(i).getClass());
-		}
-	}
+  public static class SimpleClass {
+    @JsonProperty
+    public String someString = "ABCDEF";
 
-	@Test
-	public void testToFromObject() {
-		String json = parser.toJson(simpleClass);
-		json = json.replaceAll("(\\r|\\n)", "");
-		json = json.replaceAll("\\s", "");
-		assertTrue(json.contains("\"ABCDEF\""));
-		assertTrue(json.contains("12345"));
-		assertTrue(json.contains("1.0002"));
-		assertTrue(json.contains("null"));
-		assertTrue(json.contains("\"someString\":"));
-		assertTrue(json.contains("\"someInt\":"));
-		assertTrue(json.contains("\"someFloat\":"));
-		assertTrue(json.contains("\"nullObject\":"));
+    @JsonProperty
+    public int someInt = 12345;
 
-		SimpleClass simpleClassFromJson = parser.fromJson(json, SimpleClass.class);
-		assertSimpleClass(simpleClass, simpleClassFromJson);
-	}
+    @JsonProperty
+    public float someFloat = 1.0002f;
 
-	@Test
-	public void testToFromCollection() {
-		String json = parser.toJson(LISTOFSTRINGS);
-		json = json.replaceAll("(\\r|\\n)", "");
-		json = json.replaceAll("\\s", "");
-		assertTrue(json.contains("one"));
-		assertTrue(json.contains("two"));
-		assertTrue(json.contains("three"));
-		assertTrue(json.contains("four"));
+    @JsonProperty
+    public String nullObject = null;
 
-		ArrayList<String> listFromJson = parser.fromJson(json, new JavaTypeToken<ArrayList<String>>() {
-		});
-		assertLists(LISTOFSTRINGS, listFromJson);
-	}
+    public SimpleClass() {
 
-	@Test
-	public void testToFromFile() throws IOException {
-		File tempFile = File.createTempFile("testToFromFile_", null);
-		parser.toJson(tempFile, simpleClass);
-		SimpleClass simpleClassFromJson = parser.fromJson(new FileInputStream(tempFile), SimpleClass.class);
-		assertSimpleClass(simpleClass, simpleClassFromJson);
-
-		tempFile = File.createTempFile("testToFromFile_", null);
-		parser.toJson(tempFile, LISTOFSTRINGS);
-		ArrayList<String> listFromJson = parser.fromJson(new FileInputStream(tempFile), new JavaTypeToken<ArrayList<String>>() {
-		});
-		assertLists(LISTOFSTRINGS, listFromJson);
-
-		tempFile = File.createTempFile("testToFromFile_", null);
-		parser.toJson(new FileOutputStream(tempFile), simpleClass);
-		simpleClassFromJson = parser.fromJson(new FileInputStream(tempFile), SimpleClass.class);
-		assertSimpleClass(simpleClass, simpleClassFromJson);
-	}
+    }
+  }
 
 }
